@@ -1,39 +1,41 @@
 {
   "name": "hyper-two",
-  "description": "hyper two: electric boogaloo",
   "version": "0.1.0",
-  "license": "MIT",
-  "repository": "https://github.com/tomheaton/hyper-two",
   "private": true,
+  "description": "hyper two: electric boogaloo",
+  "repository": "https://github.com/tomheaton/hyper-two",
+  "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:t": "tauri dev",
     "build": "tsc && vite build",
+    "dev": "vite",
+    "format": "biome format --write && cd src-tauri && cargo fmt",
+    "lint": "biome check",
+    "lint:ci": "biome ci",
+    "lint:fix": "biome check --fix --unsafe",
     "preview": "vite preview",
     "tauri": "tauri",
-    "format": "prettier --write . && cd src-tauri && cargo fmt"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.4.0",
-    "clsx": "^2.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwind-merge": "^1.14.0",
-    "xterm": "^5.3.0"
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-shell": "^2.3.3",
+    "@xterm/xterm": "^5.5.0",
+    "clsx": "^2.1.1",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.4.0",
-    "@types/node": "^20.6.0",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@vitejs/plugin-react": "^4.0.3",
-    "autoprefixer": "^10.4.15",
-    "postcss": "^8.4.29",
-    "prettier": "^3.0.3",
-    "prettier-plugin-tailwindcss": "^0.5.4",
-    "tailwindcss": "^3.3.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.4"
+    "@biomejs/biome": "^2.3.8",
+    "@tailwindcss/vite": "^4.1.17",
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.0.4"
   }
 }

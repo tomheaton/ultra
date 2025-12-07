@@ -1,6 +1,6 @@
-import Terminal from "@/components/Terminal";
+import { Terminal } from "@/components/terminal";
 
-export default function App() {
+export function App() {
   return (
     <div className="p-2">
       <header>

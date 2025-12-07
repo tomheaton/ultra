@@ -1,17 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn execute_text(text: &str) -> String {
-  // return format!("Executed: {}", text);
-  println!("Executed: {}", text);
-  return format!("Executed: {}", text);
-}
-
 fn main() {
-  tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![execute_text])
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+  hyper_two_lib::run()
 }
