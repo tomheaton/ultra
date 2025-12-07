@@ -7,19 +7,6 @@
   ],
   "permissions": [
     "core:default",
-    {
-      "identifier": "shell:allow-spawn",
-      "allow": [
-        {
-          "name": "cowsay",
-          "cmd": "cowsay",
-          "args": [
-            {
-              "validator": "\\S+"
-            }
-          ]
-        }
-      ]
-    }
+    "os:default"
   ]
 }

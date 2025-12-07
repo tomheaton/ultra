@@ -1,84 +1,100 @@
 import "@xterm/xterm/css/xterm.css";
 
-import { Command } from "@tauri-apps/plugin-shell";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { platform } from "@tauri-apps/plugin-os";
+import { FitAddon } from "@xterm/addon-fit";
 import { Terminal as XtermTerminal } from "@xterm/xterm";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 export function Terminal() {
-  const textRef = useRef<string>("");
   const terminalRef = useRef<HTMLDivElement>(null);
-
-  const executeCommand = useCallback(async (cmd: string, terminal: XtermTerminal) => {
-    console.log("executeCommand");
-
-    const command = Command.create(cmd.split(" ")[0], cmd.split(" ").slice(1));
-    command.on("close", (data) => {
-      terminal.write(`command finished with code ${data.code} and signal ${data.signal}\r\n`);
-      console.log(`command finished with code ${data.code} and signal ${data.signal}`);
-    });
-    command.on("error", (error) => {
-      terminal.write(`command error: "${error}"\r\n`);
-      console.error(`command error: "${error}"`);
-    });
-    command.stdout.on("data", (line) => {
-      terminal.write(`${line}\r\n`);
-      console.log(`command stdout: "${line}"`);
-    });
-    command.stderr.on("data", (line) => {
-      terminal.write(`command stderr: "${line}"\r\n`);
-      console.log(`command stderr: "${line}"`);
-    });
-
-    const child = await command.spawn();
-    console.log("pid:", child.pid);
-  }, []);
+  const pidRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!terminalRef.current) {
-      console.error("Terminal ref not set");
       return;
     }
 
-    const term = new XtermTerminal();
+    const term = new XtermTerminal({
+      cursorBlink: true,
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontSize: 14,
+    });
+
+    const fitAddon = new FitAddon();
+    term.loadAddon(fitAddon);
 
     term.open(terminalRef.current);
-
+    fitAddon.fit();
     term.focus();
 
-    term.onKey(async (e) => {
-      console.log("event:", e);
-      console.log("text:", textRef.current);
+    const shell = platform() === "windows" ? "powershell.exe" : "bash";
 
-      if (e.domEvent.key === "Enter") {
-        console.log("enter");
-        await executeCommand(textRef.current, term);
-        textRef.current = "";
-        term.write("\r\n");
-      } else if (e.domEvent.key === "Escape") {
-        console.log("escape");
-        term.write("\x1b");
-      } else if (e.domEvent.key === "Backspace") {
-        console.log("backspace");
-        if (textRef.current.length === 0) {
-          return;
-        }
-        term.write("\b \b");
-        textRef.current = textRef.current.slice(0, -1);
-      } else if (e.domEvent.key === "Tab") {
-        term.write("\t");
-        // TODO: get tab size
-        textRef.current += "\t";
-      } else {
-        console.log(e.domEvent.key);
-        textRef.current = textRef.current.concat(e.key);
-        term.write(e.key);
+    let unlisten: () => void;
+
+    const initShell = async () => {
+      try {
+        const pid = await invoke<number>("open_shell", {
+          shell,
+          cols: term.cols,
+          rows: term.rows,
+        });
+
+        console.log("Spawned shell with PID:", pid);
+        pidRef.current = pid;
+
+        unlisten = await getCurrentWindow().listen<string>(`shell-output-${pid}`, (event) => {
+          term.write(event.payload);
+        });
+      } catch (err) {
+        console.error("Failed to spawn shell", err);
+        term.write(`\r\nError launching shell: ${err}\r\n`);
+      }
+    };
+
+    initShell();
+
+    const onDataDisposable = term.onData((data) => {
+      if (pidRef.current !== null) {
+        invoke("write_to_shell", {
+          pid: pidRef.current,
+          text: data,
+        }).catch(console.error);
       }
     });
 
-    return () => {
-      term.dispose();
-    };
-  }, [executeCommand]);
+    const onResizeDisposable = term.onResize((size) => {
+      if (pidRef.current !== null) {
+        invoke("resize_shell", {
+          pid: pidRef.current,
+          cols: size.cols,
+          rows: size.rows,
+        }).catch(console.error);
+      }
+      fitAddon.fit();
+    });
 
-  return <div ref={terminalRef} />;
+    const handleWindowResize = () => fitAddon.fit();
+    window.addEventListener("resize", handleWindowResize);
+
+    return () => {
+      console.log("Terminal unmounted");
+
+      window.removeEventListener("resize", handleWindowResize);
+
+      unlisten?.();
+
+      onDataDisposable.dispose();
+      onResizeDisposable.dispose();
+
+      term.dispose();
+
+      if (pidRef.current) {
+        invoke("close_shell", { pid: pidRef.current });
+      }
+    };
+  }, []);
+
+  return <div ref={terminalRef} className="size-full overflow-hidden" />;
 }
