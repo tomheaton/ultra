@@ -1,13 +1,15 @@
 {
-  "name": "hyper-two",
+  "name": "ultra",
   "version": "0.1.0",
   "private": true,
-  "description": "hyper two: electric boogaloo",
-  "repository": "https://github.com/tomheaton/hyper-two",
+  "description": "The ultimate terminal emulator",
+  "repository": "https://github.com/tomheaton/ultra",
   "license": "MIT",
+  "author": "tomheaton",
   "type": "module",
   "scripts": {
     "build": "tsc && vite build",
+    "clean": "rm -rf dist node_modules src-tauri/target",
     "dev": "vite",
     "format": "biome format --write && cd src-tauri && cargo fmt",
     "lint": "biome check",
@@ -27,6 +29,7 @@
     "@xterm/addon-webgl": "^0.18.0",
     "@xterm/xterm": "^5.5.0",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.556.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "tailwind-merge": "^3.4.0"

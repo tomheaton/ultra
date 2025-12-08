@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { Header } from "@/components/header";
+import { StatusBar } from "@/components/status-bar";
 import { Terminal } from "@/components/terminal";
+import { MAX_TABS } from "@/constants/settings";
 import { cn } from "@/utils";
 
-type Tab = {
+export type Tab = {
   id: string;
   title: string;
 };
@@ -12,10 +15,15 @@ export function App() {
   const [activeTabId, setActiveTabId] = useState<string>("init");
 
   const createTab = useCallback(() => {
+    if (tabs.length >= MAX_TABS) {
+      console.warn(`Maximum of ${MAX_TABS} tabs reached`);
+      return;
+    }
+
     const id = Math.random().toString(36).substring(2, 9);
     setTabs((prev) => [...prev, { id, title: "Shell" }]);
     setActiveTabId(id);
-  }, []);
+  }, [tabs.length]);
 
   const closeTab = useCallback(
     (id: string) => {
@@ -73,43 +81,13 @@ export function App() {
 
   return (
     <div className="flex h-screen flex-col bg-[#000000CC] text-white">
-      {tabs.length > 1 && (
-        <header className="flex h-9 w-full select-none border-white/10 border-b bg-black/40">
-          {tabs.map((tab) => (
-            <button
-              type="button"
-              key={tab.id}
-              onClick={() => setActiveTabId(tab.id)}
-              className={cn(
-                "group flex min-w-[150px] cursor-pointer items-center justify-center border-white/5 border-r px-4 text-xs",
-                tab.id === activeTabId
-                  ? "bg-white/10 font-medium text-white"
-                  : "text-white/50 hover:bg-white/5",
-              )}
-            >
-              <span className="max-w-[100px] truncate">{tab.title}</span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(tab.id);
-                }}
-                className="ml-2 opacity-0 hover:opacity-100 group-hover:opacity-100"
-              >
-                x
-              </button>
-            </button>
-          ))}
-
-          <button
-            type="button"
-            onClick={createTab}
-            className="flex w-9 cursor-pointer items-center justify-center text-white/50 hover:text-white"
-          >
-            +
-          </button>
-        </header>
-      )}
+      <Header
+        tabs={tabs}
+        activeTabId={activeTabId}
+        setActiveTabId={setActiveTabId}
+        createTab={createTab}
+        closeTab={closeTab}
+      />
 
       {/* Terminal Container */}
       <main className="relative flex-1">
@@ -128,6 +106,8 @@ export function App() {
           </div>
         ))}
       </main>
+
+      <StatusBar />
     </div>
   );
 }

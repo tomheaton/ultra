@@ -1,17 +1,17 @@
 <p align="center">
-  <!-- <img src="./resources/icon.png" height="128" alt="hyper-two Icon"> -->
-  <img src="./resources/demo.png" height="512" alt="hyper-two Demo">
+  <!-- <img src="./resources/icon.png" height="128" alt="Ultra Icon"> -->
+  <img src="./resources/demo.png" height="512" alt="Ultra Demo">
 </p>
 
 <p align="center">
   <a href="">
     <!-- TODO: use GitHub workflow status -->
-    <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="hyper-two Build Status">
+    <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Ultra Build Status">
   </a>
 </p>
 
-<h1 align="center">hyper-two (ultra)</h1>
-<p align="center">hyper two: electric boogaloo</p>
+<h1 align="center">Ultra</h1>
+<p align="center">The ultimate terminal emulator</p>
 
 ## Tech Stack
 

@@ -3,4 +3,7 @@
 :root {
   background: black;
   color: white;
+
+  /* Prevent elastic scroll on macOS */
+  overscroll-behavior: none;
 }

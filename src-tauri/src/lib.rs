@@ -23,8 +23,8 @@ type AppState = Mutex<AppStateInner>;
 
 #[tauri::command]
 fn open_shell(
-  state: State<'_, AppState>,
   app_handle: AppHandle,
+  state: State<'_, AppState>,
   shell: &str,
   cols: u16,
   rows: u16,
@@ -37,11 +37,6 @@ fn open_shell(
     .openpty(PtySize {
       rows,
       cols,
-      // Not all systems support pixel_width, pixel_height,
-      // but it is good practice to set it to something
-      // that matches the size of the selected font.  That
-      // is more complex than can be shown here in this
-      // brief example though!
       pixel_width: 0,
       pixel_height: 0,
     })
@@ -170,6 +165,7 @@ pub fn run() {
       tauri::Builder::default()
         .setup(|app| {
           app.manage(AppState::default());
+
           return Ok(());
         })
         .plugin(tauri_plugin_os::init())
