@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
 :root {
-  @apply min-h-screen bg-black text-white;
+  background: black;
+  color: white;
 }

@@ -29,8 +29,6 @@ fn open_shell(
   cols: u16,
   rows: u16,
 ) -> Result<PID, String> {
-  println!("Spawning shell command: {}", shell);
-
   // Use the native pty implementation for the system
   let pty_system = native_pty_system();
 
@@ -112,8 +110,6 @@ fn open_shell(
 
 #[tauri::command]
 fn write_to_shell(state: State<'_, AppState>, pid: PID, text: &str) -> Result<(), String> {
-  println!("Writing to shell process {}: {}", pid, text);
-
   let state_guard = state.lock().unwrap();
   let mut shells = state_guard.shells.lock().unwrap();
 

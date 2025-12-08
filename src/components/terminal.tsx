@@ -4,12 +4,50 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { platform } from "@tauri-apps/plugin-os";
 import { FitAddon } from "@xterm/addon-fit";
+import { LigaturesAddon } from "@xterm/addon-ligatures";
+import { WebLinksAddon } from "@xterm/addon-web-links";
+import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal as XtermTerminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
+import { cn } from "@/utils";
 
-export function Terminal() {
+const HYPER_THEME = {
+  foreground: "#fff",
+  background: "rgba(0, 0, 0, 0)",
+  cursor: "rgba(248,28,229,0.8)",
+  selectionBackground: "rgba(248,28,229,0.3)",
+  black: "#000000",
+  red: "#C51E14",
+  green: "#1DC121",
+  yellow: "#C7C329",
+  blue: "#0A2FC4",
+  magenta: "#C839C5",
+  cyan: "#20C5C6",
+  white: "#C7C7C7",
+  brightBlack: "#686868",
+  brightRed: "#FD6F6B",
+  brightGreen: "#67F86F",
+  brightYellow: "#FFFA72",
+  brightBlue: "#6A76FB",
+  brightMagenta: "#FD7CFC",
+  brightCyan: "#68FDFE",
+  brightWhite: "#FFFFFF",
+} as const;
+
+export function Terminal({
+  id,
+  isActive,
+  onTitleChange,
+  // onExit,
+}: {
+  id: string;
+  isActive: boolean;
+  onTitleChange: (id: string, title: string) => void;
+  onExit: (id: string) => void;
+}) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const pidRef = useRef<number | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
 
   useEffect(() => {
     if (!terminalRef.current) {
@@ -18,38 +56,71 @@ export function Terminal() {
 
     const term = new XtermTerminal({
       cursorBlink: true,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontFamily:
+        '"Jetbrains Mono", "Menlo", "DejaVu Sans Mono", "Consolas", "Lucida Console", monospace',
       fontSize: 14,
+      lineHeight: 1.2,
+      letterSpacing: 0,
+      theme: HYPER_THEME,
+      allowTransparency: true,
+      macOptionIsMeta: true,
+      scrollback: 5000,
     });
 
     const fitAddon = new FitAddon();
+    const webglAddon = new WebglAddon();
+    const webLinksAddon = new WebLinksAddon();
+    const ligaturesAddon = new LigaturesAddon();
+
     term.loadAddon(fitAddon);
+    term.loadAddon(webLinksAddon);
 
     term.open(terminalRef.current);
+
+    // Some plugins need to be loaded after opening the terminal
+
+    try {
+      term.loadAddon(ligaturesAddon);
+    } catch (e) {
+      console.warn("Ligatures addon failed to load", e);
+    }
+
+    try {
+      webglAddon.onContextLoss(() => {
+        webglAddon.dispose();
+      });
+      term.loadAddon(webglAddon);
+    } catch (e) {
+      console.warn("WebGL addon failed to load, falling back to canvas", e);
+    }
+
     fitAddon.fit();
     term.focus();
-
-    const shell = platform() === "windows" ? "powershell.exe" : "bash";
+    fitAddonRef.current = fitAddon;
 
     let unlisten: () => void;
 
     const initShell = async () => {
       try {
         const pid = await invoke<number>("open_shell", {
-          shell,
+          shell: platform() === "windows" ? "powershell.exe" : "zsh",
           cols: term.cols,
           rows: term.rows,
         });
 
-        console.log("Spawned shell with PID:", pid);
         pidRef.current = pid;
 
         unlisten = await getCurrentWindow().listen<string>(`shell-output-${pid}`, (event) => {
           term.write(event.payload);
         });
+
+        term.onTitleChange(async (title) => {
+          console.log("Title changed:", title);
+          onTitleChange(id, title);
+          await getCurrentWindow().setTitle(title);
+        });
       } catch (err) {
-        console.error("Failed to spawn shell", err);
-        term.write(`\r\nError launching shell: ${err}\r\n`);
+        term.write(`\r\n\x1b[31mError launching shell: ${err}\x1b[0m\r\n`);
       }
     };
 
@@ -72,29 +143,47 @@ export function Terminal() {
           rows: size.rows,
         }).catch(console.error);
       }
-      fitAddon.fit();
     });
 
-    const handleWindowResize = () => fitAddon.fit();
-    window.addEventListener("resize", handleWindowResize);
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        fitAddon.fit();
+      });
+    });
+
+    resizeObserver.observe(terminalRef.current);
+
+    window.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "t") {
+        e.preventDefault();
+        console.log("New tab shortcut pressed");
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "w") {
+        e.preventDefault();
+        console.log("Close tab shortcut pressed");
+      }
+    });
 
     return () => {
-      console.log("Terminal unmounted");
-
-      window.removeEventListener("resize", handleWindowResize);
+      resizeObserver.disconnect();
 
       unlisten?.();
 
       onDataDisposable.dispose();
       onResizeDisposable.dispose();
 
+      // This automatically disposes addons
       term.dispose();
 
       if (pidRef.current) {
-        invoke("close_shell", { pid: pidRef.current });
+        invoke("close_shell", { pid: pidRef.current }).catch(console.error);
       }
     };
-  }, []);
+  }, [id, onTitleChange]);
 
-  return <div ref={terminalRef} className="size-full overflow-hidden" />;
+  return (
+    <div
+      ref={terminalRef}
+      className={cn("h-screen w-full overflow-hidden p-2", isActive ? "block" : "hidden")}
+    />
+  );
 }
