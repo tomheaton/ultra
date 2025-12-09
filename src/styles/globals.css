@@ -3,7 +3,22 @@
 :root {
   background: black;
   color: white;
+}
 
-  /* Prevent elastic scroll on macOS */
+/* Prevent elastic scroll on macOS */
+:root {
   overscroll-behavior: none;
+}
+
+/* Hide scrollbar for IE, Edge, and Firefox */
+body {
+  /* IE and Edge */
+  -ms-overflow-style: none;
+  /* Firefox */
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for Chrome, Safari, and Opera */
+body::-webkit-scrollbar {
+  display: none;
 }

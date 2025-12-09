@@ -1,8 +1,7 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { platform } from "@tauri-apps/plugin-os";
 import { PlusIcon, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
 import type { Tab } from "@/components/app";
+import { useIsFullscreen } from "@/hooks/use-is-fullscreen";
 import { cn } from "@/utils";
 
 export function Header({
@@ -18,23 +17,7 @@ export function Header({
   createTab: () => void;
   closeTab: (id: string) => void;
 }) {
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-
-  useEffect(() => {
-    let unlisten: () => void;
-
-    const initResize = async () => {
-      unlisten = await getCurrentWindow().onResized(async () => {
-        setIsFullscreen(await getCurrentWindow().isFullscreen());
-      });
-    };
-
-    initResize();
-
-    return () => {
-      unlisten?.();
-    };
-  }, []);
+  const isFullscreen = useIsFullscreen();
 
   return (
     <header
